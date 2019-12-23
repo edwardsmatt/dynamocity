@@ -77,12 +77,12 @@ func (t Time) BetweenInclusive(start, end Time) bool {
 }
 
 // String implements the fmt.Stringer interface to supply a native String representation for a value in RFC3339
-// Format with millis precision
+// Format with nanosecond precision
 func (t Time) String() string {
 	return t.Time().Format(strictNanoMarshallingFmt)
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface to marshal RFC3339 timestamps with millis precision
+// UnmarshalJSON implements the json.Unmarshaler interface to marshal RFC3339 timestamps with nanosecond precision
 func (t *Time) UnmarshalJSON(b []byte) error {
 	str, err := strconv.Unquote(string(b))
 	if err != nil {
@@ -96,7 +96,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON implements the json.Marshaler interface to marshal RFC3339 timestamps with millis precision
+// MarshalJSON implements the json.Marshaler interface to marshal RFC3339 timestamps with nanosecond precision
 func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Quote(t.String())), nil
 }

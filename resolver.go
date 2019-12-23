@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 )
 
-// OverrideEndpointResolver is an endpoint resolver for providing overriden endpoints for AWS services
+// OverrideEndpointResolver is an endpoint resolver for providing overridden endpoints for AWS services
 // Overriding the endpoints for services is helpful for testing, including running dynamodb-local
 type OverrideEndpointResolver struct {
 	region    string
