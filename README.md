@@ -15,7 +15,7 @@ The reason why `dynamocity.Time` exists is because it provides an implementation
 
 ## Prerequisites
 * `docker-compose`
-* `go 1.13+`
+* `go 1.12` (in alignment with the [AWS Go SDK V2](https://github.com/aws/aws-sdk-go-v2/))
 
 ## Getting Started
 Execute the following to provide an explanation of tasks that are commonly used for development.
