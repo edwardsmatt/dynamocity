@@ -8,16 +8,16 @@ import (
 
 func Test_StringSortedness(t *testing.T) {
 	sortedStrings := []string{
-		"2019-12-09T06:50:02.000000000Z",
-		"2019-12-09T06:50:02.500000000Z",
-		"2019-12-09T06:50:02.530000000Z",
-		"2019-12-09T06:50:02.533000000Z",
-		"2019-12-09T06:50:02.533200000Z",
-		"2019-12-09T06:50:02.533230000Z",
-		"2019-12-09T06:50:02.533237000Z",
-		"2019-12-09T06:50:02.533237300Z",
-		"2019-12-09T06:50:02.533237320Z",
 		"2019-12-09T06:50:02.533237329Z",
+		"2019-12-09T06:50:02.53323732Z",
+		"2019-12-09T06:50:02.5332373Z",
+		"2019-12-09T06:50:02.533237Z",
+		"2019-12-09T06:50:02.53323Z",
+		"2019-12-09T06:50:02.5332Z",
+		"2019-12-09T06:50:02.533Z",
+		"2019-12-09T06:50:02.53Z",
+		"2019-12-09T06:50:02.5Z",
+		"2019-12-09T06:50:02Z",
 	}
 
 	isFirst := true
@@ -34,13 +34,13 @@ func Test_StringSortedness(t *testing.T) {
 			t.Error(err)
 			t.FailNow()
 		}
-		thisTime, _ := time.Parse(strFmt, timeStr)
+		thisTime, err := time.Parse(strFmt, timeStr)
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
-		if !thisTime.After(prevTime) {
-			t.Errorf("Expected '%s' to be after '%s'", thisTime, prevTime)
+		if !thisTime.Before(prevTime) {
+			t.Errorf("Expected '%s' to be before '%s'", thisTime, prevTime)
 		}
 	}
 }
@@ -68,7 +68,11 @@ func Test_DynamocityTimeJsonRoundTrip(t *testing.T) {
 
 	var unmarshalled TestStruct
 
-	json.Unmarshal(actualBytes, &unmarshalled)
+	err = json.Unmarshal(actualBytes, &unmarshalled)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	if !unmarshalled.TimeValue.Time().Equal(testCase.TimeValue.Time()) {
 		t.Errorf("Unexpected unmarshalled time. Got '%v', want '%v'", unmarshalled.TimeValue, unmarshalled.TimeValue)

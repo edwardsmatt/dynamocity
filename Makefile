@@ -10,6 +10,7 @@ help:
 	@echo ''
 
 clean:
+	-docker-compose down
 	@rm -rf vendor go.sum go.mod coverage.out
 
 prepare:
