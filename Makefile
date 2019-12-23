@@ -21,5 +21,5 @@ prepare:
 
 test:
 	@docker-compose up -d
-	@go test -timeout 30s github.com/edwardsmatt/dynamocity -coverprofile=coverage.out
+	@go test github.com/edwardsmatt/dynamocity -coverprofile=coverage.out
 	@docker-compose down
