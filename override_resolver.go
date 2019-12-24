@@ -10,7 +10,6 @@ import (
 // OverrideEndpointResolver is an endpoint resolver for providing overridden endpoints for AWS services
 // Overriding the endpoints for services is helpful for testing, including running dynamodb-local
 type OverrideEndpointResolver struct {
-	region    string
 	overrides map[string]string
 }
 
