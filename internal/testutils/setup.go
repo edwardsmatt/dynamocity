@@ -8,8 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/edwardsmatt/dynamocity/"
-	"github.com/edwardsmatt/dynamocity/internal"
+	"github.com/edwardsmatt/dynamocity"
 )
 
 const dynamoEndpoint = "http://localhost:8000"
@@ -46,7 +45,7 @@ var DynamocityTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{
 		t.Error(err)
 		t.FailNow()
 	}
-	return Time(timestamp)
+	return dynamocity.Time(timestamp)
 }
 
 func DynamoDB() (*dynamodb.Client, error) {
@@ -59,14 +58,14 @@ func DynamoDB() (*dynamodb.Client, error) {
 	overrides[dynamodb.EndpointsID] = dynamoEndpoint
 
 	awsConfig.Region = endpoints.ApSoutheast2RegionID
-	awsConfig.EndpointResolver = internal.MakeEndpointResolver(overrides)
+	awsConfig.EndpointResolver = dynamocity.MakeEndpointResolver(overrides)
 
 	db := dynamodb.New(awsConfig)
 
 	return db, nil
 }
 
-func MakeNewTable(db *dynamodb.Client, tableName string, attrs internal.Attributes, keys internal.Keys, gsis internal.GlobalSecondaryIndexes, lsis internal.LocalSecondaryIndexes) error {
+func MakeNewTable(db *dynamodb.Client, tableName string, attrs Attributes, keys Keys, gsis GlobalSecondaryIndexes, lsis LocalSecondaryIndexes) error {
 	r := dynamodb.ListTablesInput{}
 	ltr := db.ListTablesRequest(&r)
 	resp1, err := ltr.Send(ltr.Context())
@@ -105,10 +104,10 @@ func MakeNewTable(db *dynamodb.Client, tableName string, attrs internal.Attribut
 
 func MakeTestTable(db *dynamodb.Client) (*string, error) {
 	newTable := "test_table"
-	pk := internal.MakeAttribute("pk", dynamodb.ScalarAttributeTypeS)
-	sk := internal.MakeAttribute("sk", dynamodb.ScalarAttributeTypeS)
-	dynamocityTime := internal.MakeAttribute("dynamocityTime", dynamodb.ScalarAttributeTypeS)
-	nanoTime := internal.MakeAttribute("nanoTime", dynamodb.ScalarAttributeTypeS)
+	pk := MakeAttribute("pk", dynamodb.ScalarAttributeTypeS)
+	sk := MakeAttribute("sk", dynamodb.ScalarAttributeTypeS)
+	dynamocityTime := MakeAttribute("dynamocityTime", dynamodb.ScalarAttributeTypeS)
+	nanoTime := MakeAttribute("nanoTime", dynamodb.ScalarAttributeTypeS)
 
 	attrs := []dynamodb.AttributeDefinition{
 		pk.AttributeDefinition(), sk.AttributeDefinition(), dynamocityTime.AttributeDefinition(), nanoTime.AttributeDefinition(),
@@ -120,11 +119,11 @@ func MakeTestTable(db *dynamodb.Client) (*string, error) {
 	}
 
 	lsis := []dynamodb.LocalSecondaryIndex{
-		internal.LSI("dynamocity-time-index", *pk, *dynamocityTime, dynamodb.ProjectionTypeAll, nil),
-		internal.LSI("nano-time-index", *pk, *nanoTime, dynamodb.ProjectionTypeAll, nil),
+		LSI("dynamocity-time-index", *pk, *dynamocityTime, dynamodb.ProjectionTypeAll, nil),
+		LSI("nano-time-index", *pk, *nanoTime, dynamodb.ProjectionTypeAll, nil),
 	}
 
-	gsis := internal.GlobalSecondaryIndexes{}
+	gsis := GlobalSecondaryIndexes{}
 
 	if err := MakeNewTable(db, newTable, attrs, keys, gsis, lsis); err != nil {
 		return nil, err
@@ -202,9 +201,9 @@ func SetupTestFixtures() (*dynamodb.Client, *string, []TestDynamoItem, error) {
 			return nil, nil, nil, err
 		}
 		item.NanoTime = nanoTime
-		item.DynamocityTime = Time(nanoTime)
+		item.DynamocityTime = dynamocity.Time(nanoTime)
 
-		if _, err := internal.PutItem(db, *tableName, item); err != nil {
+		if _, err := PutItem(db, *tableName, item); err != nil {
 			return nil, nil, nil, err
 		}
 	}
