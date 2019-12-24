@@ -1,4 +1,4 @@
-package dynamocity
+package internal
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -9,10 +9,10 @@ import (
 // Attributes type alias for a slice of dynamodb.AttributeDefinition
 type Attributes []dynamodb.AttributeDefinition
 
-// GlobalSecondaryIndexes type alias for a slice of dynamodb.GlobalSecondaryIndexes
+// GlobalSecondaryIndexes type alias for a slice of dynamodb.GlobalSecondaryIndex
 type GlobalSecondaryIndexes []dynamodb.GlobalSecondaryIndex
 
-// LocalSecondaryIndexes type alias for a slice of dynamodb.LocalSecondaryIndexes
+// LocalSecondaryIndexes type alias for a slice of dynamodb.LocalSecondaryIndex
 type LocalSecondaryIndexes []dynamodb.LocalSecondaryIndex
 
 // Keys type alias for a slice of dynamodb.KeySchemaElement

@@ -1,4 +1,4 @@
-package dynamocity
+package internal
 
 import (
 	"strings"
