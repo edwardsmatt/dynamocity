@@ -31,11 +31,11 @@ func Test_DynamocityTime(t *testing.T) {
 
 	cases := []testutils.SortKeyTestCase{
 		{
-			Name:       "Given a RFC3339 Timestamp, when using a sortkey with dynamocity time, then apply sort key greaterThan based on nanotime precision",
+			Name:       "Given a RFC3339 Timestamp, when using a sortkey with dynamocity.NanoTime, then apply sort key greaterThan based on nanosecond precision",
 			Timestamp:  "2019-12-09T06:50:02.53323Z",
-			SortKey:    "dynamocityTime",
-			KeyName:    "dynamocity-time-index",
-			KeyBuilder: testutils.DynamocityTimeKeyBuilder,
+			SortKey:    "nanoTime",
+			KeyName:    "nano-time-index",
+			KeyBuilder: testutils.NanoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
 				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
@@ -54,8 +54,8 @@ func Test_DynamocityTime(t *testing.T) {
 					if actual.SortKey != expectedItem.SortKey {
 						t.Errorf("Unexpected item ID at index %d. Expected '%s', Got '%s'", i, expectedItem.SortKey, actual.SortKey)
 					}
-					if !actual.DynamocityTime.Time().Equal(expectedItem.DynamocityTime.Time()) {
-						t.Errorf("Unexpected item time at index %d. Expected '%s', Got '%s'", i, expectedItem.DynamocityTime, actual.DynamocityTime)
+					if !actual.NanoTime.Time().Equal(expectedItem.NanoTime.Time()) {
+						t.Errorf("Unexpected item time at index %d. Expected '%s', Got '%s'", i, expectedItem.NanoTime, actual.NanoTime)
 					}
 				}
 			},
@@ -63,9 +63,9 @@ func Test_DynamocityTime(t *testing.T) {
 		{
 			Name:       "Given a RFC3339Nano Timestamp, when using a default RFC3339Nano timestamp, then apply sort key greaterThan based on non-precise nano precision",
 			Timestamp:  "2019-12-09T06:50:02.53323Z",
-			SortKey:    "nanoTime",
-			KeyName:    "nano-time-index",
-			KeyBuilder: testutils.NanoTimeKeyBuilder,
+			SortKey:    "goTime",
+			KeyName:    "go-time-index",
+			KeyBuilder: testutils.GoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
 				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
@@ -95,8 +95,8 @@ func Test_DynamocityTime(t *testing.T) {
 						continue
 					}
 					previousElement := actualItems[i-1]
-					if actual.NanoTime.After(previousElement.NanoTime) {
-						t.Errorf("Item NanoTime is unexpectedly after previous item NanoTime. This '%s', Previous '%s'", actual.NanoTime, previousElement.NanoTime)
+					if actual.GoTime.After(previousElement.GoTime) {
+						t.Errorf("Item GoTime is unexpectedly after previous item GoTime. This '%s', Previous '%s'", actual.GoTime, previousElement.GoTime)
 					}
 				}
 			},
@@ -104,9 +104,9 @@ func Test_DynamocityTime(t *testing.T) {
 		{
 			Name:       "Given a RFC3339Nano Timestamp, then verify the string attribute value has truncated nanos",
 			Timestamp:  "2018-12-31T00:00:00Z",
-			SortKey:    "nanoTime",
-			KeyName:    "nano-time-index",
-			KeyBuilder: testutils.NanoTimeKeyBuilder,
+			SortKey:    "goTime",
+			KeyName:    "go-time-index",
+			KeyBuilder: testutils.GoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
@@ -136,11 +136,11 @@ func Test_DynamocityTime(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Given a dynamocity.Time Timestamp, then verify the string attribute value has retained nanos",
+			Name:       "Given a dynamocity.NanoTime Timestamp, then verify the string attribute value has retained nanos",
 			Timestamp:  "2018-12-31T00:00:00Z",
-			SortKey:    "dynamocityTime",
-			KeyName:    "dynamocity-time-index",
-			KeyBuilder: testutils.DynamocityTimeKeyBuilder,
+			SortKey:    "nanoTime",
+			KeyName:    "nano-time-index",
+			KeyBuilder: testutils.NanoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
@@ -165,6 +165,72 @@ func Test_DynamocityTime(t *testing.T) {
 					expectedItem := expectedItemTimestampsInStringOrder[i]
 					if *avString != expectedItem {
 						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					}
+				}
+			},
+		},
+		{
+			Name:       "Given a dynamocity.MillisTime Timestamp, then verify the string attribute value has retained millseconds",
+			Timestamp:  "2018-12-31T00:00:00Z",
+			SortKey:    "millisTime",
+			KeyName:    "millis-time-index",
+			KeyBuilder: testutils.MillisTimeKeyBuilder,
+			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+
+				expectedItemTimestampsInStringOrder := []string{
+					"2019-12-09T06:50:02.000Z",
+					"2019-12-09T06:50:02.500Z",
+					"2019-12-09T06:50:02.530Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+					"2019-12-09T06:50:02.533Z",
+				}
+
+				if len(allItems) != 10 {
+					t.Errorf("Unexpected number of items. Expected '%d', Got '%d'", 10, len(allItems))
+				}
+
+				for i, actual := range allItems {
+					avString := actual[tc.SortKey].S
+					expectedItem := expectedItemTimestampsInStringOrder[i]
+					if *avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					}
+				}
+			},
+		},
+		{
+			Name:       "Given a Timestamp, when using a sort key with dynamocity.MillisTime, then apply sort key greaterThan based on millsecond precision",
+			Timestamp:  "2019-12-09T06:50:02.533Z",
+			SortKey:    "millisTime",
+			KeyName:    "millis-time-index",
+			KeyBuilder: testutils.MillisTimeKeyBuilder,
+			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+
+				expectedItems := map[string]string{
+					"d5ba7130-3c9d-43e9-8596-8ce372d5ebe5": "2019-12-09T06:50:02.533Z",
+					"92edbce8-7271-44fe-9e7b-83adabf406cc": "2019-12-09T06:50:02.533Z",
+					"9e8a5d44-8a14-4594-b677-85f8e9f22670": "2019-12-09T06:50:02.533Z",
+					"883dc7f6-384b-4d17-8bcf-4bf1a310d582": "2019-12-09T06:50:02.533Z",
+					"7bb99219-46d6-4ba5-8a40-2adc80e58dd0": "2019-12-09T06:50:02.533Z",
+					"2e53bcda-9451-4da3-a1b4-afd165479766": "2019-12-09T06:50:02.533Z",
+					"7721ad03-bcca-4e4c-91dc-97c30d0e85ee": "2019-12-09T06:50:02.533Z",
+				}
+
+				if len(allItems) != len(expectedItems) {
+					t.Errorf("Unexpected number of items. Expected '%d', Got '%d'", 7, len(allItems))
+				}
+
+				for i, actual := range allItems {
+					itemID := actual["sk"].S
+					millisTimestampString := actual[tc.SortKey].S
+					expectedItemTimestamp := expectedItems[*itemID]
+					if *millisTimestampString != expectedItemTimestamp {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *millisTimestampString, expectedItemTimestamp)
 					}
 				}
 			},
@@ -217,7 +283,7 @@ func Test_DynamocityTime(t *testing.T) {
 	}
 }
 
-func Test_StringSortedness(t *testing.T) {
+func Test_FlexibleNanoFmtUnMarshalling(t *testing.T) {
 	sortedStrings := []string{
 		"2019-12-09T06:50:02.533237329Z",
 		"2019-12-09T06:50:02.53323732Z",
@@ -238,7 +304,7 @@ func Test_StringSortedness(t *testing.T) {
 			continue
 		}
 
-		strFmt := dynamocity.FlexibleNanoUnmarshallingFmt
+		strFmt := dynamocity.FlexibleNanoFmt
 
 		prevTime, err := time.Parse(strFmt, sortedStrings[i-1])
 		if err != nil {
@@ -259,11 +325,11 @@ func Test_StringSortedness(t *testing.T) {
 func Test_DynamocityTimeJsonRoundTrip(t *testing.T) {
 	expectedMarshaledBytes := `{"TimeValue":"2020-01-01T14:00:00.000000000Z"}`
 	type TestStruct struct {
-		TimeValue dynamocity.Time
+		TimeValue dynamocity.NanoTime
 	}
 
 	testCase := TestStruct{
-		TimeValue: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+		TimeValue: dynamocity.NanoTime(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
 	}
 
 	actualBytes, err := json.Marshal(testCase)
@@ -293,36 +359,36 @@ func Test_DynamocityTimeJsonRoundTrip(t *testing.T) {
 func Test_BetweenStartInc(t *testing.T) {
 	cases := []struct {
 		name       string
-		startRange dynamocity.Time
-		endRange   dynamocity.Time
-		test       dynamocity.Time
+		startRange time.Time
+		endRange   time.Time
+		test       time.Time
 		expected   bool
 	}{
 		{
 			name:       "Given a testValue that is equal to the start range, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
 			expected:   true,
 		},
 		{
 			name:       "Given a testValue that is equal to the end range, then return false",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
 			expected:   false,
 		},
 		{
 			name:       "Given a testValue that is equal to the end range, when evaluating nano precision, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 9, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 9, time.UTC),
 			expected:   true,
 		},
 	}
 
 	for _, tc := range cases {
-		if tc.test.BetweenStartInc(tc.startRange, tc.endRange) != tc.expected {
+		if dynamocity.BetweenStartInc(tc.test, tc.startRange, tc.endRange) != tc.expected {
 			t.Errorf("Given %s (inclusive) and %s, expected %s range check to equal %v", tc.startRange, tc.endRange, tc.test, tc.expected)
 		}
 	}
@@ -331,36 +397,36 @@ func Test_BetweenStartInc(t *testing.T) {
 func Test_BetweenEndInc(t *testing.T) {
 	cases := []struct {
 		name       string
-		startRange dynamocity.Time
-		endRange   dynamocity.Time
-		test       dynamocity.Time
+		startRange time.Time
+		endRange   time.Time
+		test       time.Time
 		expected   bool
 	}{
 		{
 			name:       "Given a testValue that is equal to the end range, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
 			expected:   true,
 		},
 		{
 			name:       "Given a testValue that is equal to the start range, then return false",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
 			expected:   false,
 		},
 		{
 			name:       "Given a testValue that is equal to the end range, when evaluating nano precision, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 10, time.UTC),
 			expected:   true,
 		},
 	}
 
 	for _, tc := range cases {
-		if tc.test.BetweenEndInc(tc.startRange, tc.endRange) != tc.expected {
+		if dynamocity.BetweenEndInc(tc.test, tc.startRange, tc.endRange) != tc.expected {
 			t.Errorf("Given %s and %s (inclusive), expected %s range check to equal %v", tc.startRange, tc.endRange, tc.test, tc.expected)
 		}
 	}
@@ -369,36 +435,36 @@ func Test_BetweenEndInc(t *testing.T) {
 func Test_BetweenExclusive(t *testing.T) {
 	cases := []struct {
 		name       string
-		startRange dynamocity.Time
-		endRange   dynamocity.Time
-		test       dynamocity.Time
+		startRange time.Time
+		endRange   time.Time
+		test       time.Time
 		expected   bool
 	}{
 		{
 			name:       "Given a testValue that is in end range (exclusive), then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
 			expected:   true,
 		},
 		{
 			name:       "Given a testValue that is equal to the start range, then return false",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
 			expected:   false,
 		},
 		{
 			name:       "Given a testValue that is equal to the end range, then return false",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
 			expected:   false,
 		},
 	}
 
 	for _, tc := range cases {
-		if tc.test.BetweenExclusive(tc.startRange, tc.endRange) != tc.expected {
+		if dynamocity.BetweenExclusive(tc.test, tc.startRange, tc.endRange) != tc.expected {
 			t.Errorf("Given %s and %s, expected %s range check to equal %v", tc.startRange, tc.endRange, tc.test, tc.expected)
 		}
 	}
@@ -407,36 +473,36 @@ func Test_BetweenExclusive(t *testing.T) {
 func Test_BetweenInclusive(t *testing.T) {
 	cases := []struct {
 		name       string
-		startRange dynamocity.Time
-		endRange   dynamocity.Time
-		test       dynamocity.Time
+		startRange time.Time
+		endRange   time.Time
+		test       time.Time
 		expected   bool
 	}{
 		{
 			name:       "Given a testValue that equals the end range, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC),
 			expected:   true,
 		},
 		{
 			name:       "Given a testValue that equals the start range, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
 			expected:   true,
 		},
 		{
 			name:       "Given a testValue that is between the range values, then return true",
-			startRange: dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-			endRange:   dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC)),
-			test:       dynamocity.Time(time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC)),
+			startRange: time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC),
+			endRange:   time.Date(2020, time.January, 1, 14, 0, 0, 2, time.UTC),
+			test:       time.Date(2020, time.January, 1, 14, 0, 0, 1, time.UTC),
 			expected:   true,
 		},
 	}
 
 	for _, tc := range cases {
-		if tc.test.BetweenInclusive(tc.startRange, tc.endRange) != tc.expected {
+		if dynamocity.BetweenInclusive(tc.test, tc.startRange, tc.endRange) != tc.expected {
 			t.Errorf("Given %s (inclusive) and %s (inclusive), expected %s range check to equal %v", tc.startRange, tc.endRange, tc.test, tc.expected)
 		}
 	}
