@@ -10,27 +10,24 @@ From the standard go library [time.RFC3339Nano](https://golang.org/pkg/time/#pkg
 
 Subsequently, because the existing [AWS Go SDK V2](https://github.com/aws/aws-sdk-go-v2/) uses `time.RFC3339Nano`, it is not suitable to use `time.Time` as a Dynamo DB Sort Key in a string attribute type.
 
-The reason why `dynamocity.Time` exists is because it provides an implementation `dynamodbattribute.Marshaler`, `dynamodbattribute.Unmarshaller` which enforces fixed nanosecond precision when marshalling for DynamoDB, making it safe for use as a DynamoDB range key.
-
+The reason why `dynamocity.NanoTime` exists is because it provides an implementation `dynamodbattribute.Marshaler`, `dynamodbattribute.Unmarshaller` which enforces fixed nanosecond precision when marshalling for DynamoDB, making it safe for use as a DynamoDB range key.
 
 ## Prerequisites
+
 * `docker-compose`
 * `go 1.12` (in alignment with the [AWS Go SDK V2](https://github.com/aws/aws-sdk-go-v2/))
 
 ## Getting Started
+
 Execute the following to provide an explanation of tasks that are commonly used for development.
 
-```bash
-make
-```
+    make help
 
 The output explains the common make targets and what they do:
-```
-Perform common development tasks
-Usage: make [TARGET]
-Targets:
-  clean			Clean removes the vendor directory, go.mod, and go.sum files
-  prepare		Sets up a go.mod, go.sum and downloads all vendor dependencies
-  test			Starts a dynamo local dynamo container and runs unit and integration tests
-```
 
+        Perform common development tasks
+        Usage: make [TARGET]
+        Targets:
+          clean     Clean removes the vendor directory, go.mod, and go.sum files
+          prepare   Sets up a go.mod, go.sum and downloads all vendor dependencies
+          test      Starts a dynamo local dynamo container and runs unit and integration tests

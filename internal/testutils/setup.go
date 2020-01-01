@@ -14,11 +14,12 @@ import (
 const dynamoEndpoint = "http://localhost:8000"
 
 type TestDynamoItem struct {
-	PartitionKey   string          `dynamodbav:"pk"`
-	SortKey        string          `dynamodbav:"sk"`
-	NanoTime       time.Time       `dynamodbav:"nanoTime"`
-	DynamocityTime dynamocity.Time `dynamodbav:"dynamocityTime"`
-	StringTime     string          `dynamodbav:"timestamp"`
+	PartitionKey string                `dynamodbav:"pk"`
+	SortKey      string                `dynamodbav:"sk"`
+	GoTime       time.Time             `dynamodbav:"goTime"`
+	NanoTime     dynamocity.NanoTime   `dynamodbav:"nanoTime"`
+	MillisTime   dynamocity.MillisTime `dynamodbav:"millisTime"`
+	StringTime   string                `dynamodbav:"timestamp"`
 }
 
 type SortKeyTestCase struct {
@@ -30,7 +31,7 @@ type SortKeyTestCase struct {
 	Verify     func([]map[string]dynamodb.AttributeValue, SortKeyTestCase, *testing.T)
 }
 
-var NanoTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
+var GoTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
 	timestamp, err := time.Parse(time.RFC3339Nano, tc.Timestamp)
 	if err != nil {
 		t.Error(err)
@@ -39,13 +40,22 @@ var NanoTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
 	return timestamp
 }
 
-var DynamocityTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
+var NanoTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
 	timestamp, err := time.Parse(time.RFC3339Nano, tc.Timestamp)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-	return dynamocity.Time(timestamp)
+	return dynamocity.NanoTime(timestamp)
+}
+
+var MillisTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
+	timestamp, err := time.Parse(time.RFC3339Nano, tc.Timestamp)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	return dynamocity.MillisTime(timestamp)
 }
 
 func DynamoDB() (*dynamodb.Client, error) {
@@ -106,11 +116,16 @@ func MakeTestTable(db *dynamodb.Client) (*string, error) {
 	newTable := "test_table"
 	pk := MakeAttribute("pk", dynamodb.ScalarAttributeTypeS)
 	sk := MakeAttribute("sk", dynamodb.ScalarAttributeTypeS)
-	dynamocityTime := MakeAttribute("dynamocityTime", dynamodb.ScalarAttributeTypeS)
 	nanoTime := MakeAttribute("nanoTime", dynamodb.ScalarAttributeTypeS)
+	goTime := MakeAttribute("goTime", dynamodb.ScalarAttributeTypeS)
+	millisTime := MakeAttribute("millisTime", dynamodb.ScalarAttributeTypeS)
 
 	attrs := []dynamodb.AttributeDefinition{
-		pk.AttributeDefinition(), sk.AttributeDefinition(), dynamocityTime.AttributeDefinition(), nanoTime.AttributeDefinition(),
+		pk.AttributeDefinition(),
+		sk.AttributeDefinition(),
+		nanoTime.AttributeDefinition(),
+		goTime.AttributeDefinition(),
+		millisTime.AttributeDefinition(),
 	}
 
 	keys := []dynamodb.KeySchemaElement{
@@ -119,8 +134,9 @@ func MakeTestTable(db *dynamodb.Client) (*string, error) {
 	}
 
 	lsis := []dynamodb.LocalSecondaryIndex{
-		LSI("dynamocity-time-index", *pk, *dynamocityTime, dynamodb.ProjectionTypeAll, nil),
 		LSI("nano-time-index", *pk, *nanoTime, dynamodb.ProjectionTypeAll, nil),
+		LSI("go-time-index", *pk, *goTime, dynamodb.ProjectionTypeAll, nil),
+		LSI("millis-time-index", *pk, *millisTime, dynamodb.ProjectionTypeAll, nil),
 	}
 
 	gsis := GlobalSecondaryIndexes{}
@@ -196,12 +212,13 @@ func SetupTestFixtures() (*dynamodb.Client, *string, []TestDynamoItem, error) {
 
 	for i := 0; i < len(items); i++ {
 		item := &items[i]
-		nanoTime, err := time.Parse(time.RFC3339Nano, item.StringTime)
+		goTime, err := time.Parse(time.RFC3339Nano, item.StringTime)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		item.NanoTime = nanoTime
-		item.DynamocityTime = dynamocity.Time(nanoTime)
+		item.GoTime = goTime
+		item.NanoTime = dynamocity.NanoTime(goTime)
+		item.MillisTime = dynamocity.MillisTime(goTime)
 
 		if _, err := PutItem(db, *tableName, item); err != nil {
 			return nil, nil, nil, err
