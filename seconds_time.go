@@ -1,6 +1,7 @@
 package dynamocity
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -41,7 +42,7 @@ func (t SecondsTime) Time() time.Time {
 // String implements the fmt.Stringer interface to supply a native String representation for a value in time.RFC3339
 // Format with second precision
 func (t SecondsTime) String() string {
-	return t.Time().Format(StrictMillisFmt)
+	return t.Time().Format(StrictSecondsFmt)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface to marshal RFC3339 timestamps with second precision
@@ -52,7 +53,7 @@ func (t *SecondsTime) UnmarshalJSON(b []byte) error {
 	}
 	parsedTime, err := time.Parse(FlexibleNanoFmt, str)
 	if err != nil {
-		return err
+		return fmt.Errorf("Timestamp '%s' cannot be unmarshalled as a valid RFC3339 timestamp", str)
 	}
 	*t = SecondsTime(parsedTime)
 	return nil
