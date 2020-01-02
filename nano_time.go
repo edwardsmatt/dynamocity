@@ -1,6 +1,7 @@
 package dynamocity
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 
 // NanoTime represents a sortable strict RFC3339 Timestamp with fixed nanosecond precision, making it string sortable.
 // NanoTime implements dynamodbattribute.Marshaler, dynamodbattribute.Unmarshaller
-// The standard library time.RFC3339Nano format removes trailing zeros from the seconds field
+// The standard library time.RFC3339Nano format removes trailing zeros from the fractional seconds field
 // and thus may not sort correctly once formatted.
 type NanoTime time.Time
 
@@ -52,7 +53,7 @@ func (t *NanoTime) UnmarshalJSON(b []byte) error {
 	}
 	parsedTime, err := time.Parse(FlexibleNanoFmt, str)
 	if err != nil {
-		return err
+		return fmt.Errorf("Timestamp '%s' cannot be unmarshalled as a valid RFC3339 timestamp", str)
 	}
 	*t = NanoTime(parsedTime)
 	return nil

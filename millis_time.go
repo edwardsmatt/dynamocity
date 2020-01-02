@@ -1,6 +1,7 @@
 package dynamocity
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -52,7 +53,7 @@ func (t *MillisTime) UnmarshalJSON(b []byte) error {
 	}
 	parsedTime, err := time.Parse(FlexibleNanoFmt, str)
 	if err != nil {
-		return err
+		return fmt.Errorf("Timestamp '%s' cannot be unmarshalled as a valid RFC3339 timestamp", str)
 	}
 	*t = MillisTime(parsedTime)
 	return nil
