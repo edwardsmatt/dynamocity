@@ -31,10 +31,10 @@ func Test_DynamocityTime(t *testing.T) {
 
 	cases := []testutils.SortKeyTestCase{
 		{
-			Name:       "Given a RFC3339 Timestamp, when using a sortkey with dynamocity.NanoTime, then apply sort key greaterThan based on nanosecond precision",
+			Name:       "Given a RFC3339 Timestamp, when using a sortkey with dynamocity.NanoTime, then apply sort key greaterThanEqual based on nanosecond precision",
 			Timestamp:  "2019-12-09T06:50:02.53323Z",
 			SortKey:    "nanoTime",
-			KeyName:    "nano-time-index",
+			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
@@ -61,10 +61,10 @@ func Test_DynamocityTime(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Given a RFC3339Nano Timestamp, when using a default RFC3339Nano timestamp, then apply sort key greaterThan based on non-precise nano precision",
+			Name:       "Given a RFC3339Nano Timestamp, when using a default RFC3339Nano timestamp, then apply sort key greaterThanEqual based on non-precise nano precision",
 			Timestamp:  "2019-12-09T06:50:02.53323Z",
 			SortKey:    "goTime",
-			KeyName:    "go-time-index",
+			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
@@ -105,7 +105,7 @@ func Test_DynamocityTime(t *testing.T) {
 			Name:       "Given a RFC3339Nano Timestamp, then verify the string attribute value has truncated nanos",
 			Timestamp:  "2018-12-31T00:00:00Z",
 			SortKey:    "goTime",
-			KeyName:    "go-time-index",
+			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
@@ -139,7 +139,7 @@ func Test_DynamocityTime(t *testing.T) {
 			Name:       "Given a dynamocity.NanoTime Timestamp, then verify the string attribute value has retained nanos",
 			Timestamp:  "2018-12-31T00:00:00Z",
 			SortKey:    "nanoTime",
-			KeyName:    "nano-time-index",
+			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
@@ -173,7 +173,7 @@ func Test_DynamocityTime(t *testing.T) {
 			Name:       "Given a dynamocity.MillisTime Timestamp, then verify the string attribute value has retained millseconds",
 			Timestamp:  "2018-12-31T00:00:00Z",
 			SortKey:    "millisTime",
-			KeyName:    "millis-time-index",
+			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
@@ -204,10 +204,10 @@ func Test_DynamocityTime(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Given a Timestamp, when using a sort key with dynamocity.MillisTime, then apply sort key greaterThan based on millsecond precision",
+			Name:       "Given a Timestamp, when using a sort key with dynamocity.MillisTime, then apply sort key greaterThanEqual based on millsecond precision",
 			Timestamp:  "2019-12-09T06:50:02.533Z",
 			SortKey:    "millisTime",
-			KeyName:    "millis-time-index",
+			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
 			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
@@ -235,17 +235,86 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 			},
 		},
+		{
+			Name:       "Given a dynamocity.SecondsTime Timestamp, then verify the string attribute value has marshaled with seconds precision",
+			Timestamp:  "2018-12-31T00:00:00Z",
+			SortKey:    "secondsTime",
+			IndexName:  "seconds-time-index",
+			KeyBuilder: testutils.SecondsTimeKeyBuilder,
+			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+
+				expectedItemTimestampsInStringOrder := []string{
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+					"2019-12-09T06:50:02Z",
+				}
+
+				if len(allItems) != 10 {
+					t.Errorf("Unexpected number of items. Expected '%d', Got '%d'", 10, len(allItems))
+				}
+
+				for i, actual := range allItems {
+					avString := actual[tc.SortKey].S
+					expectedItem := expectedItemTimestampsInStringOrder[i]
+					if *avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					}
+				}
+			},
+		},
+		{
+			Name:       "Given a Timestamp, when using a sort key with dynamocity.SecondsTime, then apply sort key greaterThanEqual based on seconds precision",
+			Timestamp:  "2019-12-09T06:50:02Z",
+			SortKey:    "secondsTime",
+			IndexName:  "seconds-time-index",
+			KeyBuilder: testutils.SecondsTimeKeyBuilder,
+			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+
+				expectedItems := map[string]string{
+					"72fdbec6-63aa-489c-a126-e928bb6210b3": "2019-12-09T06:50:02Z",
+					"2ffb86c0-9b5e-47c5-b4e4-0f222e4c2990": "2019-12-09T06:50:02Z",
+					"6cbf5f88-bf3e-4705-8923-985e048d355c": "2019-12-09T06:50:02Z",
+					"7bb99219-46d6-4ba5-8a40-2adc80e58dd0": "2019-12-09T06:50:02Z",
+					"d5ba7130-3c9d-43e9-8596-8ce372d5ebe5": "2019-12-09T06:50:02Z",
+					"92edbce8-7271-44fe-9e7b-83adabf406cc": "2019-12-09T06:50:02Z",
+					"883dc7f6-384b-4d17-8bcf-4bf1a310d582": "2019-12-09T06:50:02Z",
+					"9e8a5d44-8a14-4594-b677-85f8e9f22670": "2019-12-09T06:50:02Z",
+					"2e53bcda-9451-4da3-a1b4-afd165479766": "2019-12-09T06:50:02Z",
+					"7721ad03-bcca-4e4c-91dc-97c30d0e85ee": "2019-12-09T06:50:02Z",
+				}
+
+				if len(allItems) != len(expectedItems) {
+					t.Errorf("Unexpected number of items. Expected '%d', Got '%d'", len(expectedItems), len(allItems))
+				}
+
+				for i, actual := range allItems {
+					itemID := actual["sk"].S
+					millisTimestampString := actual[tc.SortKey].S
+					expectedItemTimestamp := expectedItems[*itemID]
+					if *millisTimestampString != expectedItemTimestamp {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *millisTimestampString, expectedItemTimestamp)
+					}
+				}
+			},
+		},
 	}
 
 	for _, tc := range cases {
 
-		lsiKeyCondition := expression.KeyAnd(
+		keyCondition := expression.KeyAnd(
 			expression.Key("pk").Equal(expression.Value("TEST")),
 			expression.Key(tc.SortKey).GreaterThanEqual(expression.Value(tc.KeyBuilder(tc, t))),
 		)
 
 		expr, err := expression.NewBuilder().
-			WithKeyCondition(lsiKeyCondition).
+			WithKeyCondition(keyCondition).
 			Build()
 
 		if err != nil {
@@ -256,7 +325,7 @@ func Test_DynamocityTime(t *testing.T) {
 		allItems := []map[string]dynamodb.AttributeValue{}
 		input := &dynamodb.QueryInput{
 			TableName:                 tableName,
-			IndexName:                 aws.String(tc.KeyName),
+			IndexName:                 aws.String(tc.IndexName),
 			KeyConditionExpression:    expr.KeyCondition(),
 			ExpressionAttributeNames:  expr.Names(),
 			ExpressionAttributeValues: expr.Values(),
@@ -322,37 +391,56 @@ func Test_FlexibleNanoFmtUnMarshalling(t *testing.T) {
 	}
 }
 
-func Test_DynamocityTimeJsonRoundTrip(t *testing.T) {
-	expectedMarshaledBytes := `{"TimeValue":"2020-01-01T14:00:00.000000000Z"}`
-	type TestStruct struct {
-		TimeValue dynamocity.NanoTime
+func Test_JSONRoundTrip(t *testing.T) {
+	type TestType struct {
+		MillisTime  dynamocity.MillisTime  `json:"millisTime,omitempty"`
+		NanoTime    dynamocity.NanoTime    `json:"nanoTime,omitempty"`
+		SecondsTime dynamocity.SecondsTime `json:"secondsTime,omitempty"`
+	}
+	cases := []struct {
+		name                   string
+		expectedMarshaledBytes []byte
+		testCase               TestType
+	}{
+		{
+			name:                   "Given expected times, then marshal and unmarshal JSON correctly",
+			expectedMarshaledBytes: []byte(`{"millisTime":"2020-01-01T14:00:00.100Z","nanoTime":"2020-01-01T14:00:00.999000000Z","secondsTime":"2020-01-01T14:00:00Z"}`),
+			testCase: TestType{
+				MillisTime:  dynamocity.MillisTime(time.Date(2020, time.January, 1, 14, 0, 0, 100000000, time.UTC)),
+				NanoTime:    dynamocity.NanoTime(time.Date(2020, time.January, 1, 14, 0, 0, 999000000, time.UTC)),
+				SecondsTime: dynamocity.SecondsTime(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
+			},
+		},
 	}
 
-	testCase := TestStruct{
-		TimeValue: dynamocity.NanoTime(time.Date(2020, time.January, 1, 14, 0, 0, 0, time.UTC)),
-	}
+	for _, tc := range cases {
+		actualBytes, err := json.Marshal(tc.testCase)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 
-	actualBytes, err := json.Marshal(testCase)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+		actualString := string(actualBytes)
+		if actualString != string(tc.expectedMarshaledBytes) {
+			t.Errorf("Unexpected unmarshal/marshal round trip. Got '%v', want '%v'", actualString, string(tc.expectedMarshaledBytes))
+		}
+		var unmarshalled TestType
 
-	actualString := string(actualBytes)
-	if actualString != expectedMarshaledBytes {
-		t.Errorf("Unexpected unmarshal/marshal round trip. Got '%v', want '%v'", actualString, expectedMarshaledBytes)
-	}
+		err = json.Unmarshal(actualBytes, &unmarshalled)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 
-	var unmarshalled TestStruct
-
-	err = json.Unmarshal(actualBytes, &unmarshalled)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if !unmarshalled.TimeValue.Time().Equal(testCase.TimeValue.Time()) {
-		t.Errorf("Unexpected unmarshalled time. Got '%v', want '%v'", unmarshalled.TimeValue, unmarshalled.TimeValue)
+		if !unmarshalled.MillisTime.Time().Equal(tc.testCase.MillisTime.Time()) {
+			t.Errorf("Unexpected unmarshalled Millis time. Got '%v', want '%v'", unmarshalled.MillisTime, unmarshalled.MillisTime)
+		}
+		if !unmarshalled.NanoTime.Time().Equal(tc.testCase.NanoTime.Time()) {
+			t.Errorf("Unexpected unmarshalled time. Got '%v', want '%v'", unmarshalled.NanoTime, unmarshalled.NanoTime)
+		}
+		if !unmarshalled.SecondsTime.Time().Equal(tc.testCase.SecondsTime.Time()) {
+			t.Errorf("Unexpected unmarshalled time. Got '%v', want '%v'", unmarshalled.SecondsTime, unmarshalled.SecondsTime)
+		}
 	}
 }
 
