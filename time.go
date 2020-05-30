@@ -31,28 +31,28 @@ const StrictSecondsFmt = time.RFC3339
 // Therefore, this format is unsafe for marshalling to dynamo or JSON if the resultant value is expected to be sortable by string.
 const FlexibleNanoFmt = time.RFC3339Nano
 
-// BetweenStartInc will return true if this dynamocity.MillisTime is after or equal to the start and before the end
+// BetweenStartInc will return true if this time.Time is after or equal to the start and before the end
 func BetweenStartInc(t, startInclusive, endExclusive time.Time) bool {
 	afterOrEqualToStart := t.After(startInclusive) || t.Equal(startInclusive)
 	beforeEnd := t.Before(endExclusive)
 	return afterOrEqualToStart && beforeEnd
 }
 
-// BetweenEndInc will return true if this dynamocity.MillisTime is after the start and before or equal to the end
+// BetweenEndInc will return true if this time.Time is after the start and before or equal to the end
 func BetweenEndInc(t, startExclusive, endInclusive time.Time) bool {
 	afterStart := t.After(startExclusive)
 	beforeOrEqualToEnd := t.Before(endInclusive) || t.Equal(endInclusive)
 	return afterStart && beforeOrEqualToEnd
 }
 
-// BetweenExclusive will return true if this dynamocity.MillisTime is after the start and before to the end
+// BetweenExclusive will return true if this time.Time is after the start and before to the end
 func BetweenExclusive(t, startExclusive, endExclusive time.Time) bool {
 	afterStart := t.After(startExclusive)
 	beforeEnd := t.Before(endExclusive)
 	return afterStart && beforeEnd
 }
 
-// BetweenInclusive will return true if this dynamocity.MillisTime is after or equal to the start and before or equal to the end
+// BetweenInclusive will return true if this time.Time is after or equal to the start and before or equal to the end
 func BetweenInclusive(t, start, end time.Time) bool {
 	afterOrEqualToStart := t.After(start) || t.Equal(start)
 	beforeOrEqualToEnd := t.Before(end) || t.Equal(end)
