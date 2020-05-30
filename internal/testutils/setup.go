@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/edwardsmatt/dynamocity"
@@ -77,7 +76,7 @@ func DynamoDB() (*dynamodb.Client, error) {
 	overrides := make(map[string]string)
 	overrides[dynamodb.EndpointsID] = dynamoEndpoint
 
-	awsConfig.Region = endpoints.ApSoutheast2RegionID
+	awsConfig.Region = "ap-southeast-2"
 	awsConfig.EndpointResolver = dynamocity.MakeEndpointResolver(overrides)
 
 	db := dynamodb.New(awsConfig)

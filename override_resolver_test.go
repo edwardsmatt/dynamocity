@@ -3,7 +3,6 @@ package dynamocity_test
 import (
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/edwardsmatt/dynamocity"
 )
@@ -18,7 +17,7 @@ func Test_OverrideEndpointResolver(t *testing.T) {
 	}{
 		{
 			description: "Given an overridden DynamoDB endpoint, when using ap-southeast-2 region, then return the expected endpoint",
-			region:      endpoints.ApSoutheast2RegionID,
+			region:      "ap-southeast-2",
 			endpointID:  dynamodb.EndpointsID,
 			overrides: map[string]string{
 				dynamodb.EndpointsID: "http://localhost:8000",
@@ -27,14 +26,14 @@ func Test_OverrideEndpointResolver(t *testing.T) {
 		},
 		{
 			description:         "Given no overridden DynamoDB endpoint, when using ap-southeast-2 region, then return the endpoint for the the region",
-			region:              endpoints.ApSoutheast2RegionID,
+			region:              "ap-southeast-2",
 			endpointID:          dynamodb.EndpointsID,
 			overrides:           make(map[string]string),
 			expectedEndpointURL: "https://dynamodb.ap-southeast-2.amazonaws.com",
 		},
 		{
 			description:         "Given no overridden DynamoDB endpoint, when using us-east-1 region, then return the endpoint for the the region",
-			region:              endpoints.UsEast1RegionID,
+			region:              "us-east-1",
 			endpointID:          dynamodb.EndpointsID,
 			overrides:           make(map[string]string),
 			expectedEndpointURL: "https://dynamodb.us-east-1.amazonaws.com",
