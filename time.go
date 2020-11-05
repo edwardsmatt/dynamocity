@@ -24,6 +24,12 @@ const StrictMillisFmt = "2006-01-02T15:04:05.000Z07:00"
 // For example: `2006-01-02T15:04:05Z07:00`
 const StrictSecondsFmt = time.RFC3339
 
+// StrictDateFmt is a representation of the Date portion of a time.RFC3339 format.
+//
+// Unmarshalling using StrictDateFmt will result in errors if the string does not strictly match the time.RFC3339 format.
+// For example: `2006-01-02`
+const StrictDateFmt = "2006-01-02"
+
 // FlexibleNanoFmt is the standard library time.RFC3339Nano, which applies a flexible compatible nanosecond precision
 // marshalling and unmarshalling capability. However, when marshalling the standard library time.RFC3339Nano format removes trailing
 // zeros from the seconds field, and thus may not sort correctly once formatted.
