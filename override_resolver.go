@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 )
 
 // OverrideEndpointResolver is an endpoint resolver for providing overridden endpoints for AWS services
@@ -25,10 +24,13 @@ func MakeEndpointResolver(services map[string]string) aws.EndpointResolver {
 func (o *OverrideEndpointResolver) ResolveEndpoint(service, region string) (aws.Endpoint, error) {
 	serviceEndpoint := o.overrides[service]
 	trimmedEndpoint := strings.TrimSpace(serviceEndpoint)
-	if len(trimmedEndpoint) > 0 {
-		return aws.Endpoint{
-			URL: trimmedEndpoint,
-		}, nil
+	if len(trimmedEndpoint) == 0 {
+		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
 	}
-	return endpoints.NewDefaultResolver().ResolveEndpoint(service, region)
+
+	return aws.Endpoint{
+		SigningName:   service,
+		SigningRegion: region,
+		URL:           trimmedEndpoint,
+	}, nil
 }
