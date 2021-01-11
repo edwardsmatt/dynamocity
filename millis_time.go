@@ -2,31 +2,41 @@ package dynamocity
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 // MillisTime represents a sortable strict RFC3339 Timestamp with fixed millisecond precision, making it string sortable.
-// MillisTime implements dynamodbattribute.Marshaler, dynamodbattribute.Unmarshaller
+// MillisTime implements attributevalue.Marshaler, dynamodbattribute.Unmarshaller
 // The standard library time.RFC3339Nano format removes trailing zeros from the seconds field
 // and thus may not sort correctly once formatted.
 type MillisTime time.Time
 
-// MarshalDynamoDBAttributeValue implements the dynamodb.Marshaler interface to marshal
+// MarshalDynamoDBAttributeValue implements the attributevalue.Marshaler interface to marshal
 // a dynamocity.MillisTime into a DynamoDB AttributeValue string value with specific millisecond precision
-func (t MillisTime) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+func (t MillisTime) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
 	rfcTime := time.Time(t).Format(StrictMillisFmt)
-	av.S = &rfcTime
-	return nil
+	return &types.AttributeValueMemberS{
+		Value: rfcTime,
+	}, nil
 }
 
-// UnmarshalDynamoDBAttributeValue implements the dynamodb.Unmarshaler interface to unmarshal
-// a dynamodb.AttributeValue into a dynamocity.MillisTime. This unmarshal is flexible on millisecond precision
-func (t *MillisTime) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	timeString := *av.S
-	rfc339Time, err := time.Parse(FlexibleNanoFmt, timeString)
+// UnmarshalDynamoDBAttributeValue implements the attributevalue.Marshaler interface to unmarshal
+// a types.AttributeValue into a dynamocity.MillisTime. This unmarshal is flexible on millisecond precision
+func (t *MillisTime) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
+	tv, ok := av.(*types.AttributeValueMemberS)
+	if !ok {
+		return &attributevalue.UnmarshalTypeError{
+			Value: fmt.Sprintf("%T", av),
+			Type:  reflect.TypeOf((*MillisTime)(nil)),
+		}
+	}
+
+	rfc339Time, err := time.Parse(FlexibleNanoFmt, tv.Value)
 	if err != nil {
 		return err
 	}

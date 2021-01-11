@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/edwardsmatt/dynamocity"
 	"github.com/edwardsmatt/dynamocity/internal/testutils"
 )
@@ -36,7 +37,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "nanoTime",
 			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
 				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
 					t.Error(err)
@@ -66,7 +67,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "goTime",
 			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
 				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
 					t.Error(err)
@@ -107,7 +108,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "goTime",
 			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.533237329Z",
@@ -141,7 +142,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "nanoTime",
 			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.000000000Z",
@@ -175,7 +176,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "millisTime",
 			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.000Z",
@@ -209,7 +210,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "millisTime",
 			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItems := map[string]string{
 					"d5ba7130-3c9d-43e9-8596-8ce372d5ebe5": "2019-12-09T06:50:02.533Z",
@@ -241,7 +242,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "secondsTime",
 			IndexName:  "seconds-time-index",
 			KeyBuilder: testutils.SecondsTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02Z",
@@ -275,7 +276,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "secondsTime",
 			IndexName:  "seconds-time-index",
 			KeyBuilder: testutils.SecondsTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItems := map[string]string{
 					"72fdbec6-63aa-489c-a126-e928bb6210b3": "2019-12-09T06:50:02Z",
@@ -322,7 +323,7 @@ func Test_DynamocityTime(t *testing.T) {
 			t.FailNow()
 		}
 
-		allItems := []map[string]dynamodb.AttributeValue{}
+		allItems := []map[string]types.AttributeValue{}
 		input := &dynamodb.QueryInput{
 			TableName:                 tableName,
 			IndexName:                 aws.String(tc.IndexName),
