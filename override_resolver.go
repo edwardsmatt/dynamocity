@@ -25,10 +25,11 @@ func (o *OverrideEndpointResolver) ResolveEndpoint(service, region string) (aws.
 	serviceEndpoint := o.overrides[service]
 	trimmedEndpoint := strings.TrimSpace(serviceEndpoint)
 	if len(trimmedEndpoint) == 0 {
+		// returning EndpointNotFoundError will allow the service to fallback to it's default resolution
 		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
 	}
-
 	return aws.Endpoint{
+		PartitionID:   "aws",
 		SigningName:   service,
 		SigningRegion: region,
 		URL:           trimmedEndpoint,

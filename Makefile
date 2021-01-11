@@ -16,7 +16,6 @@ clean:
 prepare:
 	@go mod init github.com/edwardsmatt/dynamocity
 	@git config --global url."git@github.com:".insteadOf "https://github.com/"
-	# @go get github.com/aws/aws-sdk-go-v2@v0.24.0
 	@go mod download
 	@go mod vendor
 	@go mod tidy

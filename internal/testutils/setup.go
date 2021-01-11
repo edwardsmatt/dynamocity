@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/edwardsmatt/dynamocity"
@@ -69,15 +70,17 @@ var SecondsTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
 }
 
 func DynamoDB() (*dynamodb.Client, error) {
-	awsConfig := aws.NewConfig()
-
 	overrides := make(map[string]string)
-	overrides["dynamodb"] = dynamoEndpoint
+	overrides[dynamodb.ServiceID] = dynamoEndpoint
+	customResolver := dynamocity.MakeEndpointResolver(overrides)
+	awsConfig, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithEndpointResolver(customResolver),
+	)
+	if err != nil {
+		return nil, err
+	}
 
-	awsConfig.Region = "ap-southeast-2"
-	awsConfig.EndpointResolver = dynamocity.MakeEndpointResolver(overrides)
-
-	db := dynamodb.NewFromConfig(*awsConfig)
+	db := dynamodb.NewFromConfig(awsConfig)
 
 	return db, nil
 }
