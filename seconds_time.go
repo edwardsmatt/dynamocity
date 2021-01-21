@@ -2,10 +2,12 @@ package dynamocity
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 // SecondsTime represents a sortable strict RFC3339 Timestamp with fixed second precision, making it string sortable.
@@ -16,17 +18,24 @@ type SecondsTime time.Time
 
 // MarshalDynamoDBAttributeValue implements the dynamodb.Marshaler interface to marshal
 // a dynamocity.SecondsTime into a DynamoDB AttributeValue string value with specific second precision
-func (t SecondsTime) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+func (t SecondsTime) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
 	rfcTime := time.Time(t).Format(StrictSecondsFmt)
-	av.S = &rfcTime
-	return nil
+	return &types.AttributeValueMemberS{
+		Value: rfcTime,
+	}, nil
 }
 
 // UnmarshalDynamoDBAttributeValue implements the dynamodb.Unmarshaler interface to unmarshal
 // a dynamodb.AttributeValue into a dynamocity.SecondsTime. This unmarshal is flexible on fractional second precision
-func (t *SecondsTime) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	timeString := *av.S
-	rfc339Time, err := time.Parse(FlexibleNanoFmt, timeString)
+func (t *SecondsTime) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
+	tv, ok := av.(*types.AttributeValueMemberS)
+	if !ok {
+		return &attributevalue.UnmarshalTypeError{
+			Value: fmt.Sprintf("%T", av),
+			Type:  reflect.TypeOf((*SecondsTime)(nil)),
+		}
+	}
+	rfc339Time, err := time.Parse(FlexibleNanoFmt, tv.Value)
 	if err != nil {
 		return err
 	}

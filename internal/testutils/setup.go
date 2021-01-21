@@ -1,12 +1,14 @@
 package testutils
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/edwardsmatt/dynamocity"
 )
 
@@ -28,7 +30,7 @@ type SortKeyTestCase struct {
 	SortKey    string
 	IndexName  string
 	KeyBuilder func(SortKeyTestCase, *testing.T) interface{}
-	Verify     func([]map[string]dynamodb.AttributeValue, SortKeyTestCase, *testing.T)
+	Verify     func([]map[string]types.AttributeValue, SortKeyTestCase, *testing.T)
 }
 
 var GoTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
@@ -68,26 +70,24 @@ var SecondsTimeKeyBuilder = func(tc SortKeyTestCase, t *testing.T) interface{} {
 }
 
 func DynamoDB() (*dynamodb.Client, error) {
-	awsConfig, err := external.LoadDefaultAWSConfig()
+	overrides := make(map[string]string)
+	overrides[dynamodb.ServiceID] = dynamoEndpoint
+	customResolver := dynamocity.MakeEndpointResolver(overrides)
+	awsConfig, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithEndpointResolver(customResolver),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	overrides := make(map[string]string)
-	overrides[dynamodb.EndpointsID] = dynamoEndpoint
-
-	awsConfig.Region = "ap-southeast-2"
-	awsConfig.EndpointResolver = dynamocity.MakeEndpointResolver(overrides)
-
-	db := dynamodb.New(awsConfig)
+	db := dynamodb.NewFromConfig(awsConfig)
 
 	return db, nil
 }
 
 func MakeNewTable(db *dynamodb.Client, tableName string, attrs Attributes, keys Keys, gsis GlobalSecondaryIndexes, lsis LocalSecondaryIndexes) error {
 	r := dynamodb.ListTablesInput{}
-	ltr := db.ListTablesRequest(&r)
-	resp1, err := ltr.Send(ltr.Context())
+	resp1, err := db.ListTables(context.TODO(), &r)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func MakeNewTable(db *dynamodb.Client, tableName string, attrs Attributes, keys 
 		TableName:            aws.String(tableName),
 		AttributeDefinitions: attrs,
 		KeySchema:            keys,
-		BillingMode:          dynamodb.BillingModePayPerRequest,
+		BillingMode:          types.BillingModePayPerRequest,
 	}
 
 	if len(gsis) > 0 {
@@ -113,8 +113,7 @@ func MakeNewTable(db *dynamodb.Client, tableName string, attrs Attributes, keys 
 		cti.LocalSecondaryIndexes = lsis
 	}
 
-	ctr := db.CreateTableRequest(&cti)
-	_, err = ctr.Send(ctr.Context())
+	_, err = db.CreateTable(context.TODO(), &cti)
 	if err != nil {
 		return err
 	}
@@ -123,14 +122,14 @@ func MakeNewTable(db *dynamodb.Client, tableName string, attrs Attributes, keys 
 
 func MakeTestTable(db *dynamodb.Client) (*string, error) {
 	newTable := "test_table"
-	pk := MakeAttribute("pk", dynamodb.ScalarAttributeTypeS)
-	sk := MakeAttribute("sk", dynamodb.ScalarAttributeTypeS)
-	nanoTime := MakeAttribute("nanoTime", dynamodb.ScalarAttributeTypeS)
-	goTime := MakeAttribute("goTime", dynamodb.ScalarAttributeTypeS)
-	millisTime := MakeAttribute("millisTime", dynamodb.ScalarAttributeTypeS)
-	secondsTime := MakeAttribute("secondsTime", dynamodb.ScalarAttributeTypeS)
+	pk := MakeAttribute("pk", types.ScalarAttributeTypeS)
+	sk := MakeAttribute("sk", types.ScalarAttributeTypeS)
+	nanoTime := MakeAttribute("nanoTime", types.ScalarAttributeTypeS)
+	goTime := MakeAttribute("goTime", types.ScalarAttributeTypeS)
+	millisTime := MakeAttribute("millisTime", types.ScalarAttributeTypeS)
+	secondsTime := MakeAttribute("secondsTime", types.ScalarAttributeTypeS)
 
-	attrs := []dynamodb.AttributeDefinition{
+	attrs := []types.AttributeDefinition{
 		pk.AttributeDefinition(),
 		sk.AttributeDefinition(),
 		nanoTime.AttributeDefinition(),
@@ -139,21 +138,21 @@ func MakeTestTable(db *dynamodb.Client) (*string, error) {
 		secondsTime.AttributeDefinition(),
 	}
 
-	keys := []dynamodb.KeySchemaElement{
-		pk.KeyElement(dynamodb.KeyTypeHash),
-		sk.KeyElement(dynamodb.KeyTypeRange),
+	keys := []types.KeySchemaElement{
+		pk.KeyElement(types.KeyTypeHash),
+		sk.KeyElement(types.KeyTypeRange),
 	}
 
-	lsis := []dynamodb.LocalSecondaryIndex{
-		LSI("go-time-index", *pk, *goTime, dynamodb.ProjectionTypeAll, nil),
+	lsis := []types.LocalSecondaryIndex{
+		LSI("go-time-index", *pk, *goTime, types.ProjectionTypeAll, nil),
 	}
 
-	defaultThroughput := &dynamodb.ProvisionedThroughput{ReadCapacityUnits: aws.Int64(1), WriteCapacityUnits: aws.Int64(1)}
+	defaultThroughput := &types.ProvisionedThroughput{ReadCapacityUnits: aws.Int64(1), WriteCapacityUnits: aws.Int64(1)}
 
 	gsis := GlobalSecondaryIndexes{
-		GSI("nano-time-index", *pk, *nanoTime, dynamodb.ProjectionTypeAll, defaultThroughput, nil),
-		GSI("millis-time-index", *pk, *millisTime, dynamodb.ProjectionTypeAll, defaultThroughput, nil),
-		GSI("seconds-time-index", *pk, *secondsTime, dynamodb.ProjectionTypeAll, defaultThroughput, nil),
+		GSI("nano-time-index", *pk, *nanoTime, types.ProjectionTypeAll, defaultThroughput, nil),
+		GSI("millis-time-index", *pk, *millisTime, types.ProjectionTypeAll, defaultThroughput, nil),
+		GSI("seconds-time-index", *pk, *secondsTime, types.ProjectionTypeAll, defaultThroughput, nil),
 	}
 
 	if err := MakeNewTable(db, newTable, attrs, keys, gsis, lsis); err != nil {

@@ -1,14 +1,16 @@
 package dynamocity_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/edwardsmatt/dynamocity"
 	"github.com/edwardsmatt/dynamocity/internal/testutils"
 )
@@ -23,6 +25,14 @@ func init() {
 	db, tableName, itemsSortedOrder, err = testutils.SetupTestFixtures()
 }
 
+func decodeAttributeValue(av types.AttributeValue, t *testing.T) string {
+	tv, ok := av.(*types.AttributeValueMemberS)
+	if !ok {
+		t.Errorf("Unexpected Attribute Value Member Type %T", av)
+		t.FailNow()
+	}
+	return tv.Value
+}
 func Test_DynamocityTime(t *testing.T) {
 	if err != nil {
 		t.Error(err)
@@ -36,9 +46,9 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "nanoTime",
 			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
-				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
+				if err = attributevalue.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
 					t.Error(err)
 					t.FailNow()
 				}
@@ -66,9 +76,9 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "goTime",
 			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 				actualItems := make([]testutils.TestDynamoItem, len(allItems))
-				if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
+				if err = attributevalue.UnmarshalListOfMaps(allItems, &actualItems); err != nil {
 					t.Error(err)
 					t.FailNow()
 				}
@@ -107,7 +117,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "goTime",
 			IndexName:  "go-time-index",
 			KeyBuilder: testutils.GoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.533237329Z",
@@ -127,10 +137,10 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					avString := actual[tc.SortKey].S
+					avString := decodeAttributeValue(actual[tc.SortKey], t)
 					expectedItem := expectedItemTimestampsInStringOrder[i]
-					if *avString != expectedItem {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					if avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, avString, expectedItem)
 					}
 				}
 			},
@@ -141,7 +151,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "nanoTime",
 			IndexName:  "nano-time-index",
 			KeyBuilder: testutils.NanoTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.000000000Z",
@@ -161,10 +171,10 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					avString := actual[tc.SortKey].S
+					avString := decodeAttributeValue(actual[tc.SortKey], t)
 					expectedItem := expectedItemTimestampsInStringOrder[i]
-					if *avString != expectedItem {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					if avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, avString, expectedItem)
 					}
 				}
 			},
@@ -175,7 +185,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "millisTime",
 			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02.000Z",
@@ -195,10 +205,10 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					avString := actual[tc.SortKey].S
+					avString := decodeAttributeValue(actual[tc.SortKey], t)
 					expectedItem := expectedItemTimestampsInStringOrder[i]
-					if *avString != expectedItem {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					if avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, avString, expectedItem)
 					}
 				}
 			},
@@ -209,7 +219,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "millisTime",
 			IndexName:  "millis-time-index",
 			KeyBuilder: testutils.MillisTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItems := map[string]string{
 					"d5ba7130-3c9d-43e9-8596-8ce372d5ebe5": "2019-12-09T06:50:02.533Z",
@@ -226,11 +236,11 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					itemID := actual["sk"].S
-					millisTimestampString := actual[tc.SortKey].S
-					expectedItemTimestamp := expectedItems[*itemID]
-					if *millisTimestampString != expectedItemTimestamp {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *millisTimestampString, expectedItemTimestamp)
+					itemID := decodeAttributeValue(actual["sk"], t)
+					millisTimestampString := decodeAttributeValue(actual[tc.SortKey], t)
+					expectedItemTimestamp := expectedItems[itemID]
+					if millisTimestampString != expectedItemTimestamp {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, millisTimestampString, expectedItemTimestamp)
 					}
 				}
 			},
@@ -241,7 +251,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "secondsTime",
 			IndexName:  "seconds-time-index",
 			KeyBuilder: testutils.SecondsTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItemTimestampsInStringOrder := []string{
 					"2019-12-09T06:50:02Z",
@@ -261,10 +271,10 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					avString := actual[tc.SortKey].S
+					avString := decodeAttributeValue(actual[tc.SortKey], t)
 					expectedItem := expectedItemTimestampsInStringOrder[i]
-					if *avString != expectedItem {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *avString, expectedItem)
+					if avString != expectedItem {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, avString, expectedItem)
 					}
 				}
 			},
@@ -275,7 +285,7 @@ func Test_DynamocityTime(t *testing.T) {
 			SortKey:    "secondsTime",
 			IndexName:  "seconds-time-index",
 			KeyBuilder: testutils.SecondsTimeKeyBuilder,
-			Verify: func(allItems []map[string]dynamodb.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
+			Verify: func(allItems []map[string]types.AttributeValue, tc testutils.SortKeyTestCase, t *testing.T) {
 
 				expectedItems := map[string]string{
 					"72fdbec6-63aa-489c-a126-e928bb6210b3": "2019-12-09T06:50:02Z",
@@ -295,11 +305,11 @@ func Test_DynamocityTime(t *testing.T) {
 				}
 
 				for i, actual := range allItems {
-					itemID := actual["sk"].S
-					millisTimestampString := actual[tc.SortKey].S
-					expectedItemTimestamp := expectedItems[*itemID]
-					if *millisTimestampString != expectedItemTimestamp {
-						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, *millisTimestampString, expectedItemTimestamp)
+					itemID := decodeAttributeValue(actual["sk"], t)
+					millisTimestampString := decodeAttributeValue(actual[tc.SortKey], t)
+					expectedItemTimestamp := expectedItems[itemID]
+					if millisTimestampString != expectedItemTimestamp {
+						t.Errorf("Unexpected string attribute value %d. Expected '%s', Got '%s'", i, millisTimestampString, expectedItemTimestamp)
 					}
 				}
 			},
@@ -322,7 +332,7 @@ func Test_DynamocityTime(t *testing.T) {
 			t.FailNow()
 		}
 
-		allItems := []map[string]dynamodb.AttributeValue{}
+		allItems := []map[string]types.AttributeValue{}
 		input := &dynamodb.QueryInput{
 			TableName:                 tableName,
 			IndexName:                 aws.String(tc.IndexName),
@@ -331,20 +341,19 @@ func Test_DynamocityTime(t *testing.T) {
 			ExpressionAttributeValues: expr.Values(),
 		}
 
-		query := db.QueryRequest(input)
-		paginator := dynamodb.NewQueryPaginator(query)
-		for paginator.Next(query.Context()) {
-			page := paginator.CurrentPage()
-			allItems = append(allItems, page.Items...)
-		}
-
-		if err := paginator.Err(); err != nil {
-			t.Error(err)
-			t.FailNow()
+		qryContext := context.TODO()
+		paginator := dynamodb.NewQueryPaginator(db, input)
+		for paginator.HasMorePages() {
+			out, err := paginator.NextPage(qryContext)
+			if err != nil {
+				t.Error(err)
+				t.FailNow()
+			}
+			allItems = append(allItems, out.Items...)
 		}
 
 		queryResultItems := make([]testutils.TestDynamoItem, len(allItems))
-		if err = dynamodbattribute.UnmarshalListOfMaps(allItems, &queryResultItems); err != nil {
+		if err = attributevalue.UnmarshalListOfMaps(allItems, &queryResultItems); err != nil {
 			t.Error(err)
 			t.FailNow()
 		}

@@ -2,33 +2,42 @@ package dynamocity
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 // Date represents a sortable Date with fixed date precision.
 //
-// Date implements dynamodbattribute.Marshaler specifically for "YYYY-MM-DD"
+// Date implements attributevalue.Marshaler specifically for "YYYY-MM-DD"
 // format which does not permit any timestamp; however, it can unmarshall from any
 // Timestamp with nanosecond precision.
 type Date time.Time
 
-// MarshalDynamoDBAttributeValue implements the dynamodb.Marshaler interface to marshal
+// MarshalDynamoDBAttributeValue implements the attributevalue.Marshaler interface to marshal
 // a dynamocity.Date into a DynamoDB AttributeValue string value with specific second precision
-func (t Date) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+func (t Date) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
 	rfcTime := time.Time(t).Format(StrictDateFmt)
-	av.S = &rfcTime
-	return nil
+	return &types.AttributeValueMemberS{
+		Value: rfcTime,
+	}, nil
 }
 
-// UnmarshalDynamoDBAttributeValue implements the dynamodb.Unmarshaler interface to unmarshal
-// a dynamodb.AttributeValue into a dynamocity.Date. This unmarshal is flexible and supports any timestamp
+// UnmarshalDynamoDBAttributeValue implements the attributevalue.Unmarshaler interface to unmarshal
+// a attributevalue.AttributeValue into a dynamocity.Date. This unmarshal is flexible and supports any timestamp
 // with nanosecond precision
-func (t *Date) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	timeString := *av.S
-	date, err := parse(timeString)
+func (t *Date) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
+	tv, ok := av.(*types.AttributeValueMemberS)
+	if !ok {
+		return &attributevalue.UnmarshalTypeError{
+			Value: fmt.Sprintf("%T", av),
+			Type:  reflect.TypeOf((*MillisTime)(nil)),
+		}
+	}
+	date, err := parse(tv.Value)
 	if err != nil {
 		return err
 	}

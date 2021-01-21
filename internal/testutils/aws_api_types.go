@@ -1,33 +1,36 @@
 package testutils
 
 import (
+	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-// Attributes type alias for a slice of dynamodb.AttributeDefinition
-type Attributes []dynamodb.AttributeDefinition
+// Attributes type alias for a slice of types.AttributeDefinition
+type Attributes []types.AttributeDefinition
 
-// GlobalSecondaryIndexes type alias for a slice of dynamodb.GlobalSecondaryIndex
-type GlobalSecondaryIndexes []dynamodb.GlobalSecondaryIndex
+// GlobalSecondaryIndexes type alias for a slice of types.GlobalSecondaryIndex
+type GlobalSecondaryIndexes []types.GlobalSecondaryIndex
 
-// LocalSecondaryIndexes type alias for a slice of dynamodb.LocalSecondaryIndex
-type LocalSecondaryIndexes []dynamodb.LocalSecondaryIndex
+// LocalSecondaryIndexes type alias for a slice of types.LocalSecondaryIndex
+type LocalSecondaryIndexes []types.LocalSecondaryIndex
 
-// Keys type alias for a slice of dynamodb.KeySchemaElement
-type Keys []dynamodb.KeySchemaElement
+// Keys type alias for a slice of types.KeySchemaElement
+type Keys []types.KeySchemaElement
 
-// AttributeDefinition is a type alias for dynamodb.AttributeDefinition
-type AttributeDefinition dynamodb.AttributeDefinition
+// AttributeDefinition is a type alias for types.AttributeDefinition
+type AttributeDefinition types.AttributeDefinition
 
-// AttributeDefinition returns a dynamocity.AttributeDefinition as a dynamodb.AttributeDefinition
-func (a AttributeDefinition) AttributeDefinition() dynamodb.AttributeDefinition {
-	return dynamodb.AttributeDefinition(a)
+// AttributeDefinition returns a dynamocity.AttributeDefinition as a types.AttributeDefinition
+func (a AttributeDefinition) AttributeDefinition() types.AttributeDefinition {
+	return types.AttributeDefinition(a)
 }
 
 // MakeAttribute is a factory function for creating an AttributeDefinition for the specified attribute type
-func MakeAttribute(attributeName string, attributeType dynamodb.ScalarAttributeType) *AttributeDefinition {
+func MakeAttribute(attributeName string, attributeType types.ScalarAttributeType) *AttributeDefinition {
 
 	return &AttributeDefinition{
 		AttributeName: aws.String(attributeName),
@@ -35,48 +38,48 @@ func MakeAttribute(attributeName string, attributeType dynamodb.ScalarAttributeT
 	}
 }
 
-// KeyElement will return a dynamodb.KeySchemaElement of the specified dynamodb.KeyType for the given AttributeDefinition
-func (a AttributeDefinition) KeyElement(k dynamodb.KeyType) dynamodb.KeySchemaElement {
-	return dynamodb.KeySchemaElement{
+// KeyElement will return a types.KeySchemaElement of the specified types.KeyType for the given AttributeDefinition
+func (a AttributeDefinition) KeyElement(k types.KeyType) types.KeySchemaElement {
+	return types.KeySchemaElement{
 		AttributeName: a.AttributeName,
 		KeyType:       k,
 	}
 }
 
-// LSI is a factory function for creating a dynamodb.LocalSecondaryIndex
-func LSI(i string, h AttributeDefinition, s AttributeDefinition, p dynamodb.ProjectionType, nonKeyAttrs []string) dynamodb.LocalSecondaryIndex {
-	projection := &dynamodb.Projection{
+// LSI is a factory function for creating a types.LocalSecondaryIndex
+func LSI(i string, h AttributeDefinition, s AttributeDefinition, p types.ProjectionType, nonKeyAttrs []string) types.LocalSecondaryIndex {
+	projection := &types.Projection{
 		ProjectionType: p,
 	}
-	if p == dynamodb.ProjectionTypeInclude {
+	if p == types.ProjectionTypeInclude {
 		projection.NonKeyAttributes = nonKeyAttrs
 	}
 
-	lsi := dynamodb.LocalSecondaryIndex{
+	lsi := types.LocalSecondaryIndex{
 		IndexName: aws.String(i),
 		KeySchema: Keys{
-			h.KeyElement(dynamodb.KeyTypeHash),
-			s.KeyElement(dynamodb.KeyTypeRange),
+			h.KeyElement(types.KeyTypeHash),
+			s.KeyElement(types.KeyTypeRange),
 		},
 		Projection: projection,
 	}
 	return lsi
 }
 
-// GSI is a factory function for creating a dynamodb.GlobalSecondaryIndex
-func GSI(i string, h AttributeDefinition, s AttributeDefinition, p dynamodb.ProjectionType, t *dynamodb.ProvisionedThroughput, nonKeyAttrs []string) dynamodb.GlobalSecondaryIndex {
-	projection := &dynamodb.Projection{
+// GSI is a factory function for creating a types.GlobalSecondaryIndex
+func GSI(i string, h AttributeDefinition, s AttributeDefinition, p types.ProjectionType, t *types.ProvisionedThroughput, nonKeyAttrs []string) types.GlobalSecondaryIndex {
+	projection := &types.Projection{
 		ProjectionType: p,
 	}
-	if p == dynamodb.ProjectionTypeInclude {
+	if p == types.ProjectionTypeInclude {
 		projection.NonKeyAttributes = nonKeyAttrs
 	}
 
-	gsi := dynamodb.GlobalSecondaryIndex{
+	gsi := types.GlobalSecondaryIndex{
 		IndexName: aws.String(i),
 		KeySchema: Keys{
-			h.KeyElement(dynamodb.KeyTypeHash),
-			s.KeyElement(dynamodb.KeyTypeRange),
+			h.KeyElement(types.KeyTypeHash),
+			s.KeyElement(types.KeyTypeRange),
 		},
 		Projection:            projection,
 		ProvisionedThroughput: t,
@@ -85,9 +88,9 @@ func GSI(i string, h AttributeDefinition, s AttributeDefinition, p dynamodb.Proj
 	return gsi
 }
 
-// PutItem is a utility function to put an item in the specified table using the provided *dynamodb.Client
-func PutItem(db *dynamodb.Client, tableName string, item interface{}) (*dynamodb.PutItemResponse, error) {
-	i, err := dynamodbattribute.MarshalMap(item)
+// PutItem is a utility function to put an item in the specified table using the provided *types.Client
+func PutItem(db *dynamodb.Client, tableName string, item interface{}) (*dynamodb.PutItemOutput, error) {
+	i, err := attributevalue.MarshalMap(item)
 
 	if err != nil {
 		return nil, err
@@ -98,7 +101,5 @@ func PutItem(db *dynamodb.Client, tableName string, item interface{}) (*dynamodb
 		Item:      i,
 	}
 
-	req := db.PutItemRequest(input)
-	resp, err := req.Send(req.Context())
-	return resp, err
+	return db.PutItem(context.TODO(), input)
 }
